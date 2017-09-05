@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="act_open_diasvac" model="ir.actions.act_window">
+            <field name="name">Días Vac</field>
+            <field name="res_model">hr.diasvac</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">list</field>
+        </record>
+
+        <menuitem name="Vacaciones" id="menu_vacaciones"
+            parent="hr.menu_hr_configuration" sequence="1" groups="base.group_hr_manager"/>
+
+        <menuitem action="act_open_diasvac" id="menu_open_diasvac"
+            parent="tabla_vacaciones.menu_vacaciones" sequence="1" groups="base.group_hr_manager"/>
+
+        <record id="act_open_caleasue" model="ir.actions.act_window">
+            <field name="name">Calendario Asueto</field>
+            <field name="res_model">hr.caleasue</field>
+            <field name="view_type">form</field>
+            <field name="view_mode">list</field>
+        </record>
+
+        <menuitem action="act_open_caleasue" id="menu_open_caleasue"
+            parent="tabla_vacaciones.menu_vacaciones" sequence="1" groups="base.group_hr_manager"/>
+
+        <record id="hr_diasvac_tree" model="ir.ui.view">
+            <field name="name">hr.diasvac.tree</field>
+            <field name="model">hr.diasvac</field>
+            <field name="arch" type="xml">
+                <tree string="Días de vacaciones" editable="top">
+                    <field name="anio_anti"/>
+                    <field name="dias"/>
+                    <field name="dias1"/>
+                </tree>
+            </field>
+        </record>
+        
+        <record id="hr_caleasue_tree" model="ir.ui.view">
+            <field name="name">hr.caleasue.tree</field>
+            <field name="model">hr.caleasue</field>
+            <field name="arch" type="xml">
+                <tree string="Calendario asueto" editable="top">
+                    <field name="fe_asueto"/>
+                    <field name="tipo"/>
+                    <field name="coment"/>
+                </tree>
+            </field>
+        </record>
+
+    </data>
+</openerp>
