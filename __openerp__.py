@@ -12,6 +12,7 @@ Tabla de vacaciones para saber cuántas ha gozado el empleado y cuántas le qued
     'init_xml': [
     ],
     'data': [
+        'tablas_view.xml',
         'hr_view.xml'
     ],
     'demo': [],
