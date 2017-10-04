@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from openerp.osv import osv,fields
 from datetime import datetime
+from extrapolar_secuencia import extrapolate
 
 class diasvac(osv.Model):
     _name = "hr.diasvac"
@@ -66,22 +67,6 @@ class hr_employee(osv.Model):
                 else:
                     dias = int(antiguedad_meses * 0.75)
                     
-            #Obtiene la secuencia de cualquier fecha con base en la diferencia entre la semana que se quiere obtener y la primera semana del ciclo
-            def obtener_secuencia(fecha_x):
-                anio_x,semana_x,dia_x = fecha_x.isocalendar()
-                cr.execute("select semana,secuencia from asistmil_asignaciones where emp=%s and anio=%s and semana<=%s order by semana desc",(rec.cod_emp,anio_x,semana_x))
-                secuencias = []
-                for row in cr.fetchall():
-                    #Solo tomar las que son un ciclo (semanas consecutivas)
-                    if not secuencias or row[0] == secuencias[-1][1] - 1:
-                        secuencias.append(row)
-                if not secuencias:
-                    raise osv.except_osv("Error al calcular vacaciones", u"No se pudo inferir la secuencia de %s en la fecha %s"%(rec.name, fecha_x))
-                if len(secuencias) == 1:
-                    return secuencias[0][0]
-                else:
-                    return secuencias[(fecha_x.isocalendar()[1] - secuencias[0][0]) % len(secuencias)][1]
-                    
             #Contamos las vacaciones del año actual según la tabla CaleAsue
             #Para cada fecha si aplica como vacaciones se suma a las vacaciones gozadas (tdacu)
             #Si la fecha del asueto está en el futuro, se suma a las vacaciones por gozar (diacue)
@@ -92,20 +77,20 @@ class hr_employee(osv.Model):
             tipo_vacaciones = ('0002','0018','0030','0031','0028')
             for row in cr.fetchall():
                 fe_asueto = datetime.strptime(row[0], "%Y-%m-%d")
+                secuencia_asueto = extrapolate(cr, rec.cod_emp, fe_asueto, fecha_fin)
                 es_sabado = fe_asueto.isoweekday() == 6
                 #Si la fecha de asueto está dentro del periodo
                 if fecha_alta <= fe_asueto <= fecha_fin:
                     #Si no es sábado o cumple con las restricciones de sábado
-                    if not es_sabado or obtener_secuencia(fe_asueto) in condicion_sabado:
-                        #Buscar registro de incidencia que corresponda a la fecha y sea del tipo correcto
+                    if not es_sabado or secuencia_asueto in condicion_sabado:
+                        #Buscar registro de incidencia que corresponda a la fecha y ver que efectivamente no haya tenido actividades
                         cr.execute("select id from asistmil_inciden where empleado=%s and fecha=%s and tipo in " + repr(tipo_vacaciones), (rec.cod_emp, fe_asueto,))
-                        if cr.fetchall():
-                            #Si cumple todo lo anterior aumentar la variable de vacaciones gozadas
+                        if not cr.fetchall():
                             tdacu += 1
                 #Si esta en el futuro
                 elif fe_asueto > fecha_fin:
                     #Si no es sábado o cumple con las restricciones de sábado aumentar la variable de vacaciones por gozar
-                    if not es_sabado or obtener_secuencia(fe_asueto) in condicion_sabado:
+                    if not es_sabado or secuencia_asueto in condicion_sabado:
                         diacue += 1
                         
             #Contar cuántos registros tiene el empleado de tipo 0001 (Vacaciones) y 0035 (Vacaciones pierde premio) en lo que va del año
@@ -122,8 +107,7 @@ class hr_employee(osv.Model):
             
             res[rec.id] = {
                 'vac_tot': dias,
-                'vac_g': tdacu,
-                'vac_ped': a001,
+                'vac_g': tdacu + a001,
                 'vac_xg': diacue,
                 'vac_rest': vacrest
             }
@@ -131,9 +115,8 @@ class hr_employee(osv.Model):
         return res
 
     _columns = {
-        'vac_tot': fields.function(_get_diasvac, method=True, type="integer", string=u"Vacaciones totales", multi="vac"),
-        'vac_g': fields.function(_get_diasvac, method=True, type="integer", string=u"Gozadas (días a cuenta de vacaciones)", multi="vac"),
-        'vac_ped': fields.function(_get_diasvac, method=True, type="integer", string=u"Dias pedidos", multi="vac"),
-        'vac_xg': fields.function(_get_diasvac, method=True, type="integer", string=u"Por gozar (resto asignados)", multi="vac"),
-        'vac_rest': fields.function(_get_diasvac, method=True, type="integer", string=u"Vacaciones restantes por gozar", multi="vac"),
+        'vac_tot': fields.function(_get_diasvac, method=True, type="integer", string=u"Total Días Vac", multi="vac"),
+        'vac_g': fields.function(_get_diasvac, method=True, type="integer", string=u"Vac Gozadas", multi="vac"),
+        'vac_xg': fields.function(_get_diasvac, method=True, type="integer", string=u"Vac por gozar RH", multi="vac"),
+        'vac_rest': fields.function(_get_diasvac, method=True, type="integer", string=u"Vac por pedir", multi="vac"),
     }

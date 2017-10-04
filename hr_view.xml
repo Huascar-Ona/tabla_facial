@@ -10,11 +10,10 @@
                 <notebook position="inside">
                     <page string="Vacaciones">
                         <group>
-                            <field name="vac_tot" readonly="1"/>
-                            <field name="vac_g" readonly="1"/>
-                            <field name="vac_xg" readonly="1"/>
-                            <field name="vac_ped" readonly="1"/>
-                            <field name="vac_rest" readonly="1"/>
+                              <field name="vac_tot" readonly="1" string="Total Días Vac"/>
+                              <field name="vac_g" readonly="1" string="Vac gozadas"/>
+                              <field name="vac_xg" readonly="1" string="Vac por gozar RH"/>
+                              <field name="vac_rest" readonly="1" string="Vac por pedir"/>
                         </group>
                     </page>
                 </notebook>
